@@ -69,6 +69,7 @@ def main():
     print("Reading images ... ", end='')
     images = ds.read_image(dir_photos, transforms)
     print("done.")
+    return
 
     # Get feature maps for image tensor through VGG-16
     features_dict = mdl.get_features(images, download_wts=True, save=True)

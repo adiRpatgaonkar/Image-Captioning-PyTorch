@@ -2,6 +2,8 @@
     Everything data
 """
 
+import time
+
 import os
 from collections import Counter, OrderedDict as OD
 
@@ -112,10 +114,16 @@ def prep_data(image_data, caption_data, cap_max_len):
 def read_image(dir_photos, transforms):
     imgs = OD()
     jpgs = images_info(dir_photos)
-    for jpg in jpgs:
+    print()
+    start = time.time()
+    for i, jpg in enumerate(jpgs):
         img = Image.open(os.path.join(dir_photos, jpg))
         # print(transform(img).size())
         imgs[jpg] = transforms(img)
+        print("{}: Read & pre-processed {}.".format(i+1, jpg))
+    elapsed = time.time() - start
+    print("\nTime to preprocess {} images: {:2f} \
+            seconds".format(len(jpgs), elapsed))
     return imgs
 
 

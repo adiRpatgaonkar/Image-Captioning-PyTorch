@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision as vis
 from keras_preprocessing.sequence import pad_sequences
-from torchsummary import summary
+#from torchsummary import summary
 from collections import OrderedDict as OD
 
 import dataset as ds
