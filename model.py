@@ -1,6 +1,9 @@
 """
 Model architecture
 """
+
+import time
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,6 +11,7 @@ import torchvision as vis
 from keras_preprocessing.sequence import pad_sequences
 #from torchsummary import summary
 from collections import OrderedDict as OD
+import subprocess
 
 import dataset as ds
 
@@ -63,14 +67,16 @@ class CapNet(nn.Module):
         return input_cap
 
 
-def get_features(images, download_wts=False, save=False):
+def get_features(images, download_wts=False, save=False, cuda=False):
 
     if download_wts:
-        vgg_net = vis.models.vgg16(pretrained="imagenet", progress=True)
-    else:
-        ## Load model parameters from path
-        vgg_net = vis.models.vgg16()
-        vgg_net.load_state_dict(torch.load('./models/vgg16-397923af.pth'))
+        print("Downloading model weights")
+        subprocess.run(["wget", "https://download.pytorch.org/models/vgg16-397923af.pth", "-P", "models/"])
+
+
+    ## Load model parameters from path
+    vgg_net = vis.models.vgg16()
+    vgg_net.load_state_dict(torch.load('./models/vgg16-397923af.pth'))
 
     for p in vgg_net.parameters():
         p.requires_grad = False
@@ -90,14 +96,24 @@ def get_features(images, download_wts=False, save=False):
     ## Get feature map for image tensor through VGG-16
     img_featrs = OD()
     vgg_net.eval()
+    if cuda:
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    vgg_net.to(device)
+    print("Using " + device) 
+    start = time.time()
     print("Gathering images' features from last layer of %s ... " % type(vgg_net).__name__)
     for i, jpg_name in enumerate(images.keys()):
         with torch.no_grad():
             print(i, jpg_name)
-            img_featrs[jpg_name] = vgg_net(images[jpg_name].unsqueeze(0))
-
+            img_featrs[jpg_name] = vgg_net((images[jpg_name].unsqueeze(0)).to(device))
+    elapsed = time.time() - start
+    print("\nTime to fprop {} images VGG-16 on CPU: {:.2f} \
+            seconds".format(i, elapsed))
     if save:
         print("Saving extracted features ... ", end="")
-        torch.save(img_featrs, 'features_' + type(vgg_net).__name__ + '.pkl')
+        features_fname = 'features_' + type(vgg_net).__name__ + "_" + device + '.pkl'
+        torch.save(img_featrs, features_fname)
         print("done.")
-    return img_featrs
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    return img_featrs, features_fname

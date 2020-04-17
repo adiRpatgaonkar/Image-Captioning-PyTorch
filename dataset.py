@@ -122,7 +122,7 @@ def read_image(dir_photos, transforms):
         imgs[jpg] = transforms(img)
         print("{}: Read & pre-processed {}.".format(i+1, jpg))
     elapsed = time.time() - start
-    print("\nTime to preprocess {} images: {:2f} \
+    print("\nTime to preprocess {} images: {:.2f} \
             seconds".format(len(jpgs), elapsed))
     return imgs
 

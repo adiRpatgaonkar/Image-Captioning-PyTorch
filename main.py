@@ -2,6 +2,8 @@
     Main training and evaluation code
 
 """
+import time
+
 import dataset as ds
 import model as mdl
 
@@ -43,12 +45,13 @@ def main():
     # print(word_count)
 
     ## Clean text
+    start = time.time()
     print("Cleaning text ... ", end="")
     for i, cpt in enumerate(ann_dframe.caption.values):
         ann_dframe["caption"].iloc[i] = ds.clean_text(cpt)
     print("done.")
-    print(ann_dframe)
-    word_count = ds.word_freq(ann_dframe)
+    # print(ann_dframe)
+    # word_count = ds.word_freq(ann_dframe)
     # print(word_count)
 
     ## Add start and end sequence token
@@ -56,7 +59,10 @@ def main():
     print("Adding start and end tokens ... ", end="")
     ann_dfrm = ds.add_start_end_tokens(ann_dframe)
     print("done.")
-    print(ann_dfrm)
+    elapsed = time.time() - start
+    print("\nTime to preprocess {} captions: {:.2f} \
+            seconds".format(i, elapsed))
+    # print(ann_dfrm)
     print("\n-------------------------------------------------------------------------------------------------------\n")
 
     # ## Read images with specified transforms
@@ -69,14 +75,13 @@ def main():
     print("Reading images ... ", end='')
     images = ds.read_image(dir_photos, transforms)
     print("done.")
-    return
 
     # Get feature maps for image tensor through VGG-16
-    features_dict = mdl.get_features(images, download_wts=True, save=True)
-    print(features_dict)
+    features_dict, features_fname = mdl.get_features(images, download_wts=False, save=True, cuda=True)
+    # print(features_dict)
 
     ## Load feature maps
-    features_dict = torch.load('features_VGG.pkl')
+    features_dict = torch.load(features_fname)
     print("\n-------------------------------------------------------------------------------------------------------\n")
 
     ## Prep image tensor
@@ -230,7 +235,8 @@ def main():
             print(p, t, z, sep='\n')
             print("\n")
             best_targets.append((p, t, z))
-    print(best_targets)
+    for i, tgt in enumerate(best_targets):
+        print ("{}: {}".format(i, tgt))
     print("MEAN BLEU SCORE: %3f" % np.mean(bleu_scores))
 
     # for cap in best_targets:
